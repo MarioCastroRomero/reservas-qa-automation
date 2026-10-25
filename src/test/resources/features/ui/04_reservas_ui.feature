@@ -1,5 +1,5 @@
 # language: es
-@ui @wip @Reservas
+@ui @Reservas
 Característica: Reservas desde la interfaz web
   Como persona autenticada
   Quiero reservar en un negocio y gestionar mis reservas
@@ -28,5 +28,5 @@ Característica: Reservas desde la interfaz web
   @Positivo
   Escenario: El filtro por pestañas oculta las reservas de otro estado
     Dado que la persona tiene una reserva pendiente en "Peluquería Lola"
-    Cuando la persona filtra "Mis reservas" por el estado "Cancelada"
+    Cuando la persona filtra "Mis reservas" por el estado "Canceladas"
     Entonces "Mis reservas" no muestra ninguna reserva de "Peluquería Lola"

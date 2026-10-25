@@ -2,11 +2,9 @@ package com.mariocastro.reservas.e2e.steps;
 
 import com.mariocastro.reservas.e2e.PlaywrightHooks;
 import com.mariocastro.reservas.e2e.pages.BusinessesPage;
-import com.mariocastro.reservas.e2e.pages.LoginPage;
 import io.cucumber.java.es.Cuando;
 import io.cucumber.java.es.Dado;
 import io.cucumber.java.es.Entonces;
-import io.cucumber.java.es.Y;
 
 import static com.mariocastro.reservas.e2e.support.TestUsers.createBusiness;
 import static com.mariocastro.reservas.e2e.support.TestUsers.register;
