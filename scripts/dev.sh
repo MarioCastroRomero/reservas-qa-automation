@@ -8,7 +8,13 @@ WEB_PORT=${WEB_PORT:-5173}
 set -m
 
 port_in_use() {
-  lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1
+  if command -v lsof >/dev/null 2>&1; then
+    lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1
+  elif command -v netstat >/dev/null 2>&1; then
+    netstat -ano | grep -E -q "(:$1|\[::\]:$1)[[:space:]]+.*LISTENING"
+  else
+    return 1
+  fi
 }
 
 for port in $API_PORT $WEB_PORT; do
@@ -45,7 +51,7 @@ start $'\033[36m[api]\033[0m ' env SERVER_PORT="$API_PORT" ./mvnw -q spring-boot
 start $'\033[35m[web]\033[0m ' env API_TARGET="http://localhost:$API_PORT" npm --prefix frontend run dev -- --port "$WEB_PORT" --strictPort
 
 (
-  for _ in $(seq 1 180); do
+  for _ in {1..180}; do
     if curl -s -o /dev/null "http://localhost:$API_PORT/business"; then
       printf '\nListo: http://localhost:%s (Ctrl+C para parar)\n\n' "$WEB_PORT"
       exit 0

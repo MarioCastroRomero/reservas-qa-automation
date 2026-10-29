@@ -21,7 +21,7 @@ API_PORT=$API_PORT WEB_PORT=$WEB_PORT \
 pid=$!
 
 echo "Esperando a la API (:$API_PORT) y al frontend (:$WEB_PORT)... (logs en target/e2e-servers.log)"
-for _ in $(seq 1 180); do
+for _ in {1..180}; do
   if curl -s -o /dev/null "http://localhost:$API_PORT/business" && curl -s -o /dev/null "http://localhost:$WEB_PORT"; then
     ready=1
     break

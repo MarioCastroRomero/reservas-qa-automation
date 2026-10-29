@@ -1,5 +1,5 @@
 # language: es
-@ui @wip @MisNegocios
+@ui @MisNegocios
 Característica: Gestión de negocios propios en la interfaz web
   Como persona que quiere recibir reservas
   Quiero publicar y eliminar mis negocios
@@ -27,4 +27,4 @@ Característica: Gestión de negocios propios en la interfaz web
   @Positivo
   Escenario: Publicar el primer negocio cambia el menú de navegación
     Cuando la persona publica el negocio "Cafetería Sol" con CIF "B12345678" y dirección "Calle Mayor 1"
-    Entonces el menú principal muestra el enlace "Mis negocios"
+    Entonces el menú principal muestra el negocio "Cafetería Sol"
