@@ -25,6 +25,10 @@ public class MyBookingsPage {
 
     public void hacerReserva(String negocio) {
         buscarNegocioParaReservar(negocio);
+        LocalDateTime fechaReserva = LocalDateTime.now().plusDays(2).withHour(12).withMinute(0);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+        String fechaFormateada = fechaReserva.format(formatter);
+        page.locator("input[type='datetime-local']").fill(fechaFormateada);
         page.getByText("Solicitar reserva").click();
     }
 
