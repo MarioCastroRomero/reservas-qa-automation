@@ -5,8 +5,9 @@ import { useToast } from '../context/ToastContext';
 import { useLoader } from '../hooks/useLoader';
 import BookingCard from '../components/BookingCard';
 import Icon from '../components/Icon';
-import { Alert, Button, ConfirmDialog, EmptyState, Pagination, Spinner, Tabs } from '../components/ui';
-import { STATUSES, STATUS_LABELS, ownerActions } from '../utils/bookingStatus';
+import { ReasonDialog } from '../components/dialogs';
+import { Alert, Button, EmptyState, Pagination, Spinner, Tabs } from '../components/ui';
+import { STATUSES, STATUS_LABELS, ownerActions, ownerExtraActions } from '../utils/bookingStatus';
 import { errorMessage } from '../utils/errors';
 import { formatDateTime } from '../utils/format';
 
@@ -17,6 +18,8 @@ const ACTION_TEXT = {
   confirm: { done: 'Reserva confirmada', call: bookingApi.confirm },
   complete: { done: 'Reserva marcada como completada', call: bookingApi.complete },
   cancel: { done: 'Reserva cancelada', call: bookingApi.cancel },
+  reject: { done: 'Reserva rechazada', call: bookingApi.reject },
+  noShow: { done: 'Reserva marcada como no presentado', call: bookingApi.noShow },
 };
 
 export default function BusinessBookingsPage() {
@@ -26,6 +29,7 @@ export default function BusinessBookingsPage() {
   const [page, setPage] = useState(0);
   const [pending, setPending] = useState(null);
   const [cancelling, setCancelling] = useState(null);
+  const [rejecting, setRejecting] = useState(null);
 
   const business = useLoader(() => businessApi.get(id), [id]);
   const { data, loading, error, reload, setData } = useLoader(
@@ -39,10 +43,10 @@ export default function BusinessBookingsPage() {
     setPage(0);
   };
 
-  const run = async (booking, action) => {
+  const run = async (booking, action, reason) => {
     setPending({ uuid: booking.uuid, action });
     try {
-      const updated = await ACTION_TEXT[action].call(booking.uuid);
+      const updated = await ACTION_TEXT[action].call(booking.uuid, reason);
       setData((list) =>
         (list || []).map((b) => (b.uuid === updated.uuid ? updated : b)).filter((b) => !status || b.status === status),
       );
@@ -53,6 +57,7 @@ export default function BusinessBookingsPage() {
     } finally {
       setPending(null);
       setCancelling(null);
+      setRejecting(null);
     }
   };
 
@@ -99,7 +104,7 @@ export default function BusinessBookingsPage() {
           ) : (
             <div className={`list ${loading ? 'is-loading' : ''}`}>
               {bookings.map((booking) => {
-                const actions = ownerActions(booking.status);
+                const actions = { ...ownerActions(booking.status), ...ownerExtraActions(booking) };
                 const disabled = Boolean(pending);
                 return (
                   <BookingCard
@@ -107,7 +112,7 @@ export default function BusinessBookingsPage() {
                     booking={booking}
                     perspective="owner"
                     actions={
-                      (actions.canConfirm || actions.canComplete || actions.canCancel) && (
+                      (actions.canConfirm || actions.canComplete || actions.canCancel || actions.canReject || actions.canNoShow) && (
                         <>
                           {actions.canConfirm && (
                             <Button size="sm" icon="check" loading={isBusy(booking, 'confirm')} disabled={disabled} onClick={() => run(booking, 'confirm')}>
@@ -117,6 +122,16 @@ export default function BusinessBookingsPage() {
                           {actions.canComplete && (
                             <Button size="sm" variant="success" icon="flag" loading={isBusy(booking, 'complete')} disabled={disabled} onClick={() => run(booking, 'complete')}>
                               Completar
+                            </Button>
+                          )}
+                          {actions.canReject && (
+                            <Button size="sm" variant="danger-ghost" icon="x" disabled={disabled} onClick={() => setRejecting(booking)}>
+                              Rechazar
+                            </Button>
+                          )}
+                          {actions.canNoShow && (
+                            <Button size="sm" variant="secondary" icon="flag" loading={isBusy(booking, 'noShow')} disabled={disabled} onClick={() => run(booking, 'noShow')}>
+                              No presentado
                             </Button>
                           )}
                           {actions.canCancel && (
@@ -138,14 +153,26 @@ export default function BusinessBookingsPage() {
       )}
 
       {cancelling && (
-        <ConfirmDialog
+        <ReasonDialog
           title="¿Cancelar esta reserva?"
           message={`Se cancelará la reserva de ${cancelling.holderName || 'el cliente'} del ${formatDateTime(cancelling.bookingTime)}.`}
           confirmLabel="Sí, cancelar"
           danger
           loading={isBusy(cancelling, 'cancel')}
-          onConfirm={() => run(cancelling, 'cancel')}
+          onConfirm={(reason) => run(cancelling, 'cancel', reason)}
           onCancel={() => setCancelling(null)}
+        />
+      )}
+
+      {rejecting && (
+        <ReasonDialog
+          title="¿Rechazar esta reserva?"
+          message={`Se rechazará la reserva de ${rejecting.holderName || 'el cliente'} del ${formatDateTime(rejecting.bookingTime)}. El cliente verá el motivo.`}
+          confirmLabel="Sí, rechazar"
+          required
+          loading={isBusy(rejecting, 'reject')}
+          onConfirm={(reason) => run(rejecting, 'reject', reason)}
+          onCancel={() => setRejecting(null)}
         />
       )}
     </div>

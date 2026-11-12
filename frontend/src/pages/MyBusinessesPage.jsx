@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useLoader } from '../hooks/useLoader';
 import BusinessForm from '../components/BusinessForm';
+import OpeningHoursEditor from '../components/OpeningHoursEditor';
 import { BusinessAvatar } from '../components/BusinessCard';
 import Icon from '../components/Icon';
 import { Alert, Button, ConfirmDialog, EmptyState, Modal, Spinner } from '../components/ui';
@@ -16,6 +17,7 @@ export default function MyBusinessesPage() {
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
+  const [hoursFor, setHoursFor] = useState(null);
   const [busy, setBusy] = useState(false);
 
   const { data, loading, error, reload, setData } = useLoader(
@@ -101,12 +103,20 @@ export default function MyBusinessesPage() {
               <p className="meta-line">
                 <Icon name="pin" size={14} /> {business.address}
               </p>
+              {business.maxCapacityPerSlot && (
+                <p className="meta-line" data-testid="capacity">
+                  <Icon name="users" size={14} /> Aforo: {business.maxCapacityPerSlot} personas/hora
+                </p>
+              )}
               <div className="owner-card-actions">
                 <Link to={`/mis-negocios/${business.uuid}/reservas`} className="btn btn-primary btn-sm">
                   <Icon name="calendar" size={16} /> <span>Reservas</span>
                 </Link>
                 <Button variant="secondary" size="sm" icon="edit" onClick={() => setEditing(business)}>
                   Editar
+                </Button>
+                <Button variant="secondary" size="sm" icon="clock" onClick={() => setHoursFor(business)}>
+                  Horario
                 </Button>
                 <Button variant="danger-ghost" size="sm" icon="trash" onClick={() => setDeleting(business)} aria-label={`Eliminar ${business.name}`} />
               </div>
@@ -124,6 +134,19 @@ export default function MyBusinessesPage() {
       {editing && (
         <Modal title="Editar negocio" onClose={() => setEditing(null)}>
           <BusinessForm initial={editing} submitLabel="Guardar cambios" onSubmit={handleUpdate} onCancel={() => setEditing(null)} />
+        </Modal>
+      )}
+
+      {hoursFor && (
+        <Modal title={`Horario - ${hoursFor.name}`} onClose={() => setHoursFor(null)}>
+          <OpeningHoursEditor
+            businessId={hoursFor.uuid}
+            onSaved={() => {
+              setHoursFor(null);
+              toast.success('Horario guardado');
+            }}
+            onCancel={() => setHoursFor(null)}
+          />
         </Modal>
       )}
 

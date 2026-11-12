@@ -2,6 +2,7 @@ package com.mariocastro.reservas.controller;
 
 import com.mariocastro.reservas.dto.BookingDto;
 import com.mariocastro.reservas.dto.BusinessDto;
+import com.mariocastro.reservas.dto.OpeningHoursDto;
 import com.mariocastro.reservas.model.BookingStatus;
 import com.mariocastro.reservas.service.BookingService;
 import com.mariocastro.reservas.service.BusinessService;
@@ -59,6 +60,18 @@ public class BusinessController {
     @PreAuthorize("hasAnyRole('BUSINESS_OWNER', 'ADMIN')")
     public void delete(@PathVariable String uuid) {
         businessService.deleteBusiness(uuid);
+    }
+
+    @GetMapping("/{uuid}/opening-hours")
+    public List<OpeningHoursDto> getOpeningHours(@PathVariable String uuid) {
+        return businessService.getOpeningHours(uuid);
+    }
+
+    @PutMapping("/{uuid}/opening-hours")
+    @PreAuthorize("hasAnyRole('BUSINESS_OWNER', 'ADMIN')")
+    public List<OpeningHoursDto> replaceOpeningHours(
+            @PathVariable String uuid, @RequestBody List<OpeningHoursDto> slots) {
+        return businessService.replaceOpeningHours(uuid, slots);
     }
 
     @GetMapping("/{uuid}/bookings")

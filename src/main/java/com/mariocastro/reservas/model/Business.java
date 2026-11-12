@@ -33,6 +33,9 @@ public class Business {
     @Column(name = "active", nullable = false, columnDefinition = "boolean default true")
     private boolean active = true;
 
+    @Column(name = "max_capacity_per_slot")
+    private Integer maxCapacityPerSlot;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

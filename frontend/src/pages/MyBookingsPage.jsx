@@ -5,8 +5,9 @@ import { useToast } from '../context/ToastContext';
 import { useLoader } from '../hooks/useLoader';
 import BookingCard from '../components/BookingCard';
 import BookingForm from '../components/BookingForm';
-import { Alert, Button, ConfirmDialog, EmptyState, Modal, Pagination, Spinner, Tabs } from '../components/ui';
-import { STATUSES, STATUS_LABELS, holderActions } from '../utils/bookingStatus';
+import { ReasonDialog, ReviewDialog } from '../components/dialogs';
+import { Alert, Button, EmptyState, Modal, Pagination, Spinner, Tabs } from '../components/ui';
+import { STATUSES, STATUS_LABELS, canReview, holderActions } from '../utils/bookingStatus';
 import { errorMessage } from '../utils/errors';
 import { formatDateTime } from '../utils/format';
 
@@ -20,6 +21,8 @@ export default function MyBookingsPage() {
   const [editing, setEditing] = useState(null);
   const [cancelling, setCancelling] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [reviewing, setReviewing] = useState(null);
+  const [reviewError, setReviewError] = useState('');
 
   const { data, loading, error, reload, setData } = useLoader(
     () => bookingApi.mine({ status: status || undefined, page, size: PAGE_SIZE }),
@@ -45,10 +48,25 @@ export default function MyBookingsPage() {
     toast.success('Reserva actualizada');
   };
 
-  const handleCancel = async () => {
+  const handleReview = async (payload) => {
+    setBusy(true);
+    setReviewError('');
+    try {
+      const created = await bookingApi.review(reviewing.uuid, payload);
+      replaceBooking({ ...reviewing, reviewed: true });
+      toast.success(`Gracias por tu valoración (${created.rating}★)`);
+      setReviewing(null);
+    } catch (err) {
+      setReviewError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleCancel = async (reason) => {
     setBusy(true);
     try {
-      const updated = await bookingApi.cancel(cancelling.uuid);
+      const updated = await bookingApi.cancel(cancelling.uuid, reason);
       replaceBooking(updated);
       toast.success('Reserva cancelada');
       setCancelling(null);
@@ -101,8 +119,13 @@ export default function MyBookingsPage() {
                 key={booking.uuid}
                 booking={booking}
                 actions={
-                  (actions.canEdit || actions.canCancel) && (
+                  (actions.canEdit || actions.canCancel || canReview(booking)) && (
                     <>
+                      {canReview(booking) && (
+                        <Button variant="secondary" size="sm" icon="star" onClick={() => setReviewing(booking)}>
+                          Valorar
+                        </Button>
+                      )}
                       {actions.canEdit && (
                         <Button variant="secondary" size="sm" icon="edit" onClick={() => setEditing(booking)}>
                           Modificar
@@ -131,7 +154,7 @@ export default function MyBookingsPage() {
       )}
 
       {cancelling && (
-        <ConfirmDialog
+        <ReasonDialog
           title="¿Cancelar la reserva?"
           message={`Vas a cancelar tu reserva en ${cancelling.businessName || 'el negocio'} del ${formatDateTime(cancelling.bookingTime)}. Esta acción no se puede deshacer.`}
           confirmLabel="Sí, cancelar"
@@ -139,6 +162,16 @@ export default function MyBookingsPage() {
           loading={busy}
           onConfirm={handleCancel}
           onCancel={() => setCancelling(null)}
+        />
+      )}
+
+      {reviewing && (
+        <ReviewDialog
+          booking={reviewing}
+          loading={busy}
+          error={reviewError}
+          onSubmit={handleReview}
+          onCancel={() => setReviewing(null)}
         />
       )}
     </div>

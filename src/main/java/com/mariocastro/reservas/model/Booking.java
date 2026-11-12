@@ -42,6 +42,13 @@ public class Booking {
     @Column(name = "party_size", nullable = false)
     private Integer partySize;
 
+    @Column(name = "cancellation_reason", length = 500)
+    private String cancellationReason;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "cancelled_by", length = 20)
+    private CancelledBy cancelledBy;
+
     @Version
     @Column(name = "version")
     private Long version;

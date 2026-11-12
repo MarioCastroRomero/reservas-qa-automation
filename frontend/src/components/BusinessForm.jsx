@@ -19,13 +19,23 @@ export default function BusinessForm({ initial, submitLabel = 'Guardar', onSubmi
   const handleSubmit = async (event) => {
     event.preventDefault();
     const found = validateBusiness(values);
+    const capacity = String(values.maxCapacityPerSlot ?? '').trim();
+    if (capacity && (!/^\d+$/.test(capacity) || Number(capacity) < 1)) {
+      found.maxCapacityPerSlot = 'El aforo debe ser un número entero mayor que 0';
+    }
     setErrors(found);
     setFormError('');
     if (hasErrors(found)) return;
 
     setSaving(true);
     try {
-      await onSubmit({ name: values.name.trim(), cif: values.cif.trim().toUpperCase(), address: values.address.trim() });
+      const capacity = String(values.maxCapacityPerSlot ?? '').trim();
+      await onSubmit({
+        name: values.name.trim(),
+        cif: values.cif.trim().toUpperCase(),
+        address: values.address.trim(),
+        maxCapacityPerSlot: capacity ? Number(capacity) : null,
+      });
     } catch (error) {
       const fieldErrors = error.fieldErrors || {};
       if (error.status === 409 && /CIF/i.test(error.details?.[0] || '')) setErrors({ cif: errorMessage(error) });
@@ -56,6 +66,19 @@ export default function BusinessForm({ initial, submitLabel = 'Guardar', onSubmi
       </Field>
       <Field label="Dirección" error={errors.address}>
         {(p) => <input {...p} value={values.address} onChange={set('address')} maxLength={150} placeholder="Calle Mayor 10, Madrid" />}
+      </Field>
+      <Field label="Aforo máximo por hora" error={errors.maxCapacityPerSlot} hint="Opcional. Personas totales por franja horaria; vacío = sin límite">
+        {(p) => (
+          <input
+            {...p}
+            type="number"
+            min={1}
+            inputMode="numeric"
+            value={values.maxCapacityPerSlot ?? ''}
+            onChange={set('maxCapacityPerSlot')}
+            placeholder="Sin límite"
+          />
+        )}
       </Field>
       <div className="form-actions">
         {onCancel && (

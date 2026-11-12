@@ -1,6 +1,8 @@
 package com.mariocastro.reservas.controller;
 
 import com.mariocastro.reservas.dto.BookingDto;
+import com.mariocastro.reservas.dto.CancelBookingRequest;
+import com.mariocastro.reservas.dto.RejectBookingRequest;
 import com.mariocastro.reservas.dto.UpdateBookingRequest;
 import com.mariocastro.reservas.model.BookingStatus;
 import com.mariocastro.reservas.service.BookingService;
@@ -57,7 +59,19 @@ public class BookingController {
     }
 
     @PatchMapping("/{uuid}/cancel")
-    public BookingDto cancel(@PathVariable String uuid) {
-        return bookingService.cancel(uuid);
+    public BookingDto cancel(@PathVariable String uuid, @Valid @RequestBody(required = false) CancelBookingRequest request) {
+        return bookingService.cancel(uuid, request == null ? null : request.getReason());
+    }
+
+    @PatchMapping("/{uuid}/reject")
+    @PreAuthorize("hasAnyRole('BUSINESS_OWNER', 'ADMIN')")
+    public BookingDto reject(@PathVariable String uuid, @Valid @RequestBody RejectBookingRequest request) {
+        return bookingService.reject(uuid, request.getReason());
+    }
+
+    @PatchMapping("/{uuid}/no-show")
+    @PreAuthorize("hasAnyRole('BUSINESS_OWNER', 'ADMIN')")
+    public BookingDto noShow(@PathVariable String uuid) {
+        return bookingService.noShow(uuid);
     }
 }

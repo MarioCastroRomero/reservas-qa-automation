@@ -46,6 +46,17 @@ export default function BookingCard({ booking, perspective = 'holder', actions }
             </li>
           )}
         </ul>
+        {booking.cancellationReason && (
+          <p className="booking-note" data-testid="cancellation-reason">
+            <Icon name="note" size={14} />{' '}
+            {booking.status === 'REJECTED'
+              ? 'Motivo del rechazo'
+              : booking.cancelledBy === 'BUSINESS'
+                ? 'Cancelada por el negocio'
+                : 'Motivo de cancelación'}
+            : {booking.cancellationReason}
+          </p>
+        )}
         {booking.note && (
           <p className="booking-note">
             <Icon name="note" size={14} /> {booking.note}

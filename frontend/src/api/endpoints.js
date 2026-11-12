@@ -21,6 +21,9 @@ export const businessApi = {
   remove: (id) => request(`/business/${id}`, { method: 'DELETE' }),
   bookings: (id, { status, page = 0, size = 20 } = {}) =>
     request(`/business/${id}/bookings`, { params: { status, page, size } }),
+  openingHours: (id) => request(`/business/${id}/opening-hours`),
+  saveOpeningHours: (id, slots) => request(`/business/${id}/opening-hours`, { method: 'PUT', body: slots }),
+  reviews: (id, { page = 0, size = 20 } = {}) => request(`/business/${id}/reviews`, { params: { page, size } }),
 };
 
 export const bookingApi = {
@@ -30,5 +33,9 @@ export const bookingApi = {
   update: (id, data) => request(`/booking/${id}`, { method: 'PUT', body: data }),
   confirm: (id) => request(`/booking/${id}/confirm`, { method: 'PATCH' }),
   complete: (id) => request(`/booking/${id}/complete`, { method: 'PATCH' }),
-  cancel: (id) => request(`/booking/${id}/cancel`, { method: 'PATCH' }),
+  cancel: (id, reason) =>
+    request(`/booking/${id}/cancel`, { method: 'PATCH', body: reason ? { reason } : undefined }),
+  reject: (id, reason) => request(`/booking/${id}/reject`, { method: 'PATCH', body: { reason } }),
+  noShow: (id) => request(`/booking/${id}/no-show`, { method: 'PATCH' }),
+  review: (id, data) => request(`/booking/${id}/review`, { method: 'POST', body: data }),
 };

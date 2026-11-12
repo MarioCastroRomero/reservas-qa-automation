@@ -52,8 +52,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ApiError> handleUnreadableBody(HttpMessageNotReadableException ex) {
-        return build(HttpStatus.BAD_REQUEST, "Validation error", List.of("Malformed or unreadable request body"));
+    public ResponseEntity<ApiError> handleUnreadableBody(HttpMessageNotReadableException ex) {        return build(HttpStatus.BAD_REQUEST, "Validation error", List.of("Malformed or unreadable request body"));
     }
 
     @ExceptionHandler({NotFoundException.class, NoSuchElementException.class})

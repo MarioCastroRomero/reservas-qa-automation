@@ -1395,3 +1395,88 @@ a.booking-name:hover {
     transition-duration: 0.01ms !important;
   }
 }
+
+.badge-rejected {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.badge-no_show {
+  background: var(--neutral-soft);
+  color: var(--danger);
+}
+
+.booking-rejected,
+.booking-no_show {
+  opacity: 0.8;
+}
+
+.stars {
+  display: inline-flex;
+  gap: 2px;
+  vertical-align: middle;
+}
+
+.star {
+  color: var(--text-muted);
+  opacity: 0.4;
+  background: none;
+  border: 0;
+  padding: 0;
+  line-height: 1;
+}
+
+.star-on {
+  color: #f5a524;
+  opacity: 1;
+}
+
+button.star {
+  cursor: pointer;
+}
+
+.rating-line {
+  margin: 4px 0 12px;
+}
+
+.hours-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.hours-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border, rgba(128, 128, 128, 0.2));
+}
+
+.hours-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hours-day {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+}
+
+.review-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.review-item p {
+  margin: 4px 0;
+}
+
+.reviews {
+  margin-top: 16px;
+}

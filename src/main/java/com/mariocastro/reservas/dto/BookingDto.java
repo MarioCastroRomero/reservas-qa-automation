@@ -2,6 +2,7 @@ package com.mariocastro.reservas.dto;
 
 import com.mariocastro.reservas.model.Booking;
 import com.mariocastro.reservas.model.BookingStatus;
+import com.mariocastro.reservas.model.CancelledBy;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Min;
@@ -62,6 +63,21 @@ public class BookingDto {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String holderEmail;
 
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private String cancellationReason;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private CancelledBy cancelledBy;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private Boolean reviewed = false;
+
+    public static BookingDto fromBooking(Booking booking, boolean reviewed) {
+        BookingDto dto = fromBooking(booking);
+        dto.setReviewed(reviewed);
+        return dto;
+    }
+
     public static BookingDto fromBooking(Booking booking) {
         BookingDto bookingDto = new BookingDto();
         bookingDto.setUuid(booking.getUuid());
@@ -77,6 +93,8 @@ public class BookingDto {
         bookingDto.setBusinessAddress(booking.getBusiness().getAddress());
         bookingDto.setHolderName(BusinessDto.fullName(booking.getHolder().getName(), booking.getHolder().getLastName()));
         bookingDto.setHolderEmail(booking.getHolder().getEmail());
+        bookingDto.setCancellationReason(booking.getCancellationReason());
+        bookingDto.setCancelledBy(booking.getCancelledBy());
         return bookingDto;
     }
 

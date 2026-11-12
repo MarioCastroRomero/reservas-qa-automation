@@ -2,6 +2,7 @@ package com.mariocastro.reservas.dto;
 
 import com.mariocastro.reservas.model.Business;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -31,6 +32,15 @@ public class BusinessDto {
     @Pattern(regexp = "^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\\s,.-/ºª#()]{5,150}$", message = "Address must be between 5 and 150 characters and only contain valid characters")
     private String address;
 
+    @Min(value = 1, message = "Capacity must be at least 1")
+    private Integer maxCapacityPerSlot;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private Double averageRating;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private Long reviewCount;
+
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private UUID ownerId;
 
@@ -46,6 +56,8 @@ public class BusinessDto {
         businessDto.setName(business.getName());
         businessDto.setCif(business.getCif());
         businessDto.setAddress(business.getAddress());
+        businessDto.setMaxCapacityPerSlot(business.getMaxCapacityPerSlot());
+        businessDto.setReviewCount(0L);
         businessDto.setOwnerId(business.getOwner().getUuid());
         businessDto.setActive(business.isActive());
         businessDto.setOwnerName(fullName(business.getOwner().getName(), business.getOwner().getLastName()));
@@ -61,6 +73,7 @@ public class BusinessDto {
         business.setName(this.getName());
         business.setCif(this.getCif());
         business.setAddress(this.getAddress());
+        business.setMaxCapacityPerSlot(this.getMaxCapacityPerSlot());
         return business;
     }
 }
