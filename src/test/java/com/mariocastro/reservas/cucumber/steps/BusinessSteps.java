@@ -1,5 +1,6 @@
 package com.mariocastro.reservas.cucumber.steps;
 
+import com.mariocastro.reservas.cucumber.ApiState;
 import com.mariocastro.reservas.dto.UserDto;
 import com.mariocastro.reservas.model.Booking;
 import com.mariocastro.reservas.model.BookingStatus;
@@ -8,6 +9,7 @@ import com.mariocastro.reservas.model.Role;
 import com.mariocastro.reservas.model.User;
 import com.mariocastro.reservas.repository.BookingRepository;
 import com.mariocastro.reservas.repository.BusinessRepository;
+import com.mariocastro.reservas.repository.OpeningHoursRepository;
 import com.mariocastro.reservas.repository.UserRepository;
 import com.mariocastro.reservas.service.AuthService;
 import io.cucumber.java.es.Cuando;
@@ -17,7 +19,6 @@ import io.cucumber.java.es.Y;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
-import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import org.hamcrest.Matchers;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +47,11 @@ public class BusinessSteps {
     @Autowired
     private BookingRepository bookingRepository;
 
-    private Response response;
+    @Autowired
+    private OpeningHoursRepository openingHoursRepository;
+
+    @Autowired
+    private ApiState apiState;
 
     private User owner;
 
@@ -56,17 +61,11 @@ public class BusinessSteps {
 
     private User adminUser;
 
-    private String token;
-
     private User loginUSer;
 
     private Business empresaSeleccionada;
 
     private Business empresaBody;
-
-    private String uuid;
-
-    private Map<String, String> pathParam;
 
     private List<Booking> reservasEmpresa;
 
@@ -78,7 +77,7 @@ public class BusinessSteps {
         bookingRepository.deleteAll();
         businessRepository.deleteAll();
         userRepository.deleteAll();
-        pathParam = new HashMap<>();
+        openingHoursRepository.deleteAll();
         owner = guardaUsuario("pepe", "propietario", "propietario@prueba.com", "Password123@", LocalDate.of(1995, 5, 15), Role.BUSINESS_OWNER);
         otherOwner = guardaUsuario("Pedro", "otro propietario", "otroPropietario@prueba.com", "Password123@", LocalDate.of(1995, 5, 12), Role.BUSINESS_OWNER);
         normalUser = guardaUsuario("Mario", "usuario normal", "usuarioNormal@prueba.com", "Password123", LocalDate.of(1995, 5, 12), Role.USER);
@@ -92,7 +91,7 @@ public class BusinessSteps {
 
     @Dado("sin cabecera \"Authorization\"")
     public void cabeceraSinAutorizacion() {
-        token = null;
+        apiState.setToken(null);
     }
 
     @Dado("una empresa inactiva cuyo dueño es {string}")
@@ -104,7 +103,7 @@ public class BusinessSteps {
             user = owner;
         }
         empresaSeleccionada = guardaEmpresa(user, "Peluquería Ana", "Calle Mayor 1, Madrid", false, "A28000016");
-        uuid = empresaSeleccionada.getUuid().toString();
+        apiState.setUuid(empresaSeleccionada.getUuid().toString());
     }
 
     @Dado("una empresa activa cuyo dueño es {string}")
@@ -116,12 +115,12 @@ public class BusinessSteps {
             user = owner;
         }
         empresaSeleccionada = guardaEmpresa(user, "Peluquería Ana 2", "Calle Mayor 1, Madrid", true, "A28000017");
-        uuid = empresaSeleccionada.getUuid().toString();
+        apiState.setUuid(empresaSeleccionada.getUuid().toString());
     }
 
     @Dado("una empresa inexistente con UUID {string}")
     public void empresaInexistente(String uuidStr) {
-        uuid = uuidStr;
+        apiState.setUuid(uuidStr);
     }
 
     @Dado("los datos de una empresa válida")
@@ -182,53 +181,54 @@ public class BusinessSteps {
     @Cuando("se envía una petición {word} a {string}")
     public void executeRequest(String metodo, String path) {
         RequestSpecification requestSpecification = RestAssured.given();
-        if (token != null) {
-            requestSpecification = requestSpecification.auth().oauth2(token);
+        if (apiState.getToken() != null) {
+            requestSpecification = requestSpecification.auth().oauth2(apiState.getToken());
         }
         requestSpecification = requestSpecification
                 .contentType(ContentType.JSON)
-                .params(pathParam)
+                .params(apiState.getPathParam())
                 .when();
 
         if (empresaBody != null) {
             requestSpecification.body(empresaBody);
         }
 
+        String uuid = apiState.getUuid();
         if (uuid != null && path.contains("{uuid}")) {
-            response = requestSpecification.request(metodo, path, uuid);
+            apiState.setResponse(requestSpecification.request(metodo, path, uuid));
         } else {
-            response = requestSpecification.request(metodo, path);
+            apiState.setResponse(requestSpecification.request(metodo, path));
         }
     }
 
     @Entonces("la respuesta tiene el estado {int}")
     public void codigoRespuesta(int code) {
-        response.then().statusCode(code);
+        apiState.getResponse().then().statusCode(code);
     }
 
     @Entonces("la respuesta debe contener la empresa solicitada")
     public void debeContenerEmpresa() {
-        assertEquals(empresaSeleccionada.getUuid().toString(), response.jsonPath().getString("uuid"));
-        assertEquals(empresaSeleccionada.getName(), response.jsonPath().getString("name"));
+        assertEquals(empresaSeleccionada.getUuid().toString(), apiState.getResponse().jsonPath().getString("uuid"));
+        assertEquals(empresaSeleccionada.getName(), apiState.getResponse().jsonPath().getString("name"));
     }
 
     @Entonces("el details debe contener {string}")
     public void detallesContiene(String detalles) {
-        response.then().body("details", Matchers.hasItem(Matchers.equalTo(detalles)));
+        apiState.getResponse().then().body("details", Matchers.hasItem(Matchers.equalTo(detalles)));
     }
 
     @Entonces("la respuesta debe contener las empresas pertenecientes del usuario")
     public void respuestaConEmpresasDelUsuario() {
         String uuidUser = loginUSer.getUuid().toString();
-        response.then().body("ownerId", Matchers.everyItem(Matchers.equalTo(uuidUser)));
+        apiState.getResponse().then().body("ownerId", Matchers.everyItem(Matchers.equalTo(uuidUser)));
     }
 
     @Entonces("la respuesta debe contener la empresa")
     public void respuestaContieneEmpresa() {
-        assertNotNull(response.jsonPath().getString("uuid"));
-        assertEquals(empresaBody.getName(), response.jsonPath().getString("name"));
-        assertEquals(empresaBody.getAddress(), response.jsonPath().getString("address"));
-        assertEquals(empresaBody.getCif(), response.jsonPath().getString("cif"));
+        assertNotNull(apiState.getResponse().jsonPath().getString("uuid"));
+        assertEquals(empresaBody.getName(), apiState.getResponse().jsonPath().getString("name"));
+        assertEquals(empresaBody.getAddress(), apiState.getResponse().jsonPath().getString("address"));
+        assertEquals(empresaBody.getCif(), apiState.getResponse().jsonPath().getString("cif"));
     }
 
     @Entonces("mi rol debe seguir siendo el mismo")
@@ -250,7 +250,7 @@ public class BusinessSteps {
 
     @Entonces("la respuesta debe estar vacia")
     public void respuestaDebeEStarVacia() {
-        assertTrue(response.getBody().asString().isEmpty());
+        assertTrue(apiState.getResponse().getBody().asString().isEmpty());
     }
 
     @Entonces("la empresa debe haber quedado inactiva")
@@ -272,12 +272,12 @@ public class BusinessSteps {
                 .filter(booking -> booking.getStatus() == bookingStatus)
                 .toList();
         compruebaReservasEmpresa(esperadas);
-        response.then().body("status", Matchers.everyItem(Matchers.equalTo(status)));
+        apiState.getResponse().then().body("status", Matchers.everyItem(Matchers.equalTo(status)));
     }
 
     @Entonces("la respuesta debe contener {int} elementos")
     public void respuestaContieneElementos(int elementos) {
-        assertEquals(elementos, response.jsonPath().getList("$").size(), response.asString());
+        assertEquals(elementos, apiState.getResponse().jsonPath().getList("$").size(), apiState.getResponse().asString());
     }
 
     @Y("una petición autenticada con rol {string}")
@@ -288,40 +288,40 @@ public class BusinessSteps {
             case ADMIN -> adminUser;
             case BUSINESS_OWNER -> owner;
         };
-        token = authService.generateToken(UserDto.fromUser(loginUSer));
+        apiState.setToken(authService.generateToken(UserDto.fromUser(loginUSer)));
     }
 
     @Y("la respuesta debe contener exactamente las empresas {string}")
     public void respuestaContieneEmpresas(String empresasStr) {
         List<String> empresas = Arrays.stream(empresasStr.split(",")).map(String::trim).toList();
-        assertTrue(empresas.containsAll(response.jsonPath().getList("name", String.class)));
+        assertTrue(empresas.containsAll(apiState.getResponse().jsonPath().getList("name", String.class)));
     }
 
     @Y("el parámetro {string} con valor {string}")
     public void incluyeValor(String clave, String valor) {
-        pathParam.put(clave, valor);
+        apiState.getPathParam().put(clave, valor);
     }
 
     @Y("la respuesta debe contener las empresas en este orden {string}")
     public void respuestaContieneEmpresasEnOrden(String empresasStr) {
         List<String> empresas = Arrays.stream(empresasStr.split(",")).map(String::trim).toList();
-        assertEquals(empresas, response.jsonPath().getList("name", String.class));
+        assertEquals(empresas, apiState.getResponse().jsonPath().getList("name", String.class));
     }
 
     @Y("la respuesta debe ser una lista vacía")
     public void respuestaContieneListaVacia() {
-        assertTrue(response.jsonPath().getList("$").isEmpty(), response.asString());
+        assertTrue(apiState.getResponse().jsonPath().getList("$").isEmpty(), apiState.getResponse().asString());
     }
 
     @Y("la respuesta es un error de autenticación")
     public void respuestaErrorAutentificacion() {
-        JsonPath jsonPath = response.jsonPath();
+        JsonPath jsonPath = apiState.getResponse().jsonPath();
         assertEquals("Unauthorized", jsonPath.get("error"));
     }
 
     @Y("el error debe indicar {string}")
     public void errorDebeIndicar(String error) {
-        JsonPath jsonPath = response.jsonPath();
+        JsonPath jsonPath = apiState.getResponse().jsonPath();
         assertEquals(error, jsonPath.get("error"));
     }
 
@@ -379,10 +379,10 @@ public class BusinessSteps {
 
     private void compruebaReservasEmpresa(List<Booking> esperadas) {
         List<String> uuidsEsperados = esperadas.stream().map(booking -> booking.getUuid().toString()).toList();
-        List<String> uuidsRespuesta = response.jsonPath().getList("uuid", String.class);
-        assertEquals(uuidsEsperados.size(), uuidsRespuesta.size(), response.asString());
-        assertTrue(uuidsRespuesta.containsAll(uuidsEsperados), response.asString());
-        response.then().body("businessId", Matchers.everyItem(Matchers.equalTo(empresaSeleccionada.getUuid().toString())));
+        List<String> uuidsRespuesta = apiState.getResponse().jsonPath().getList("uuid", String.class);
+        assertEquals(uuidsEsperados.size(), uuidsRespuesta.size(), apiState.getResponse().asString());
+        assertTrue(uuidsRespuesta.containsAll(uuidsEsperados), apiState.getResponse().asString());
+        apiState.getResponse().then().body("businessId", Matchers.everyItem(Matchers.equalTo(empresaSeleccionada.getUuid().toString())));
     }
 
 }

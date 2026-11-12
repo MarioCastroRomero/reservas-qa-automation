@@ -23,10 +23,24 @@ class BookingStatusTest {
     }
 
     @Test
+    void pendingCanBeRejectedButNotMarkedNoShow() {
+        assertTrue(PENDING.canTransitionTo(REJECTED));
+        assertFalse(PENDING.canTransitionTo(NO_SHOW));
+    }
+
+    @Test
+    void confirmedCanBeMarkedNoShowButNotRejected() {
+        assertTrue(CONFIRMED.canTransitionTo(NO_SHOW));
+        assertFalse(CONFIRMED.canTransitionTo(REJECTED));
+    }
+
+    @Test
     void terminalStatusesHaveNoTransitions() {
         for (BookingStatus next : values()) {
             assertFalse(CANCELLED.canTransitionTo(next));
             assertFalse(COMPLETED.canTransitionTo(next));
+            assertFalse(REJECTED.canTransitionTo(next));
+            assertFalse(NO_SHOW.canTransitionTo(next));
         }
     }
 }
